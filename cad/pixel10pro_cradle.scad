@@ -139,9 +139,14 @@ module esp32_mount() {
     // or screwing an ESP32 dev board.
     // ESP32 DevKit is roughly 51 x 28 mm.
     for (dy = [10, 50]) {
-        translate([-5, dy, wall])
+        translate([-3, dy, wall])
             difference() {
-                cylinder(h = 8, d = 6, $fn = 20);
+                union() {
+                    cylinder(h = 8, d = 6, $fn = 20);
+                    // Bridge tab connecting post to left wall
+                    translate([0, -3, 0])
+                        cube([3, 6, 8]);
+                }
                 cylinder(h = 9, d = m2_hole_d, $fn = 20);
             }
     }

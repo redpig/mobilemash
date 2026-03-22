@@ -120,22 +120,20 @@ module servo_mount_holes(btn_y) {
 
 module servo_tab_shelf(btn_y) {
     // Ledge for the servo tabs, shifted to match body offset.
-    // The shelf starts flush with the wall outer face and a vertical
-    // rib ties it to the wall above the cable-routing channel (z ≤ 5).
+    // Starts from the inner wall face so it's fully bonded.
+    // The cable channel is split to avoid cutting through here.
     local_y = btn_y - cradle_y_offset;
     body_start = local_y - sg90_shaft_offset;
     tab_start  = body_start - (sg90_tab_w - sg90_body_w) / 2;
 
-    // Horizontal shelf for tabs to rest on
-    translate([outer_w, tab_start, wall])
-        cube([3, sg90_tab_w, sg90_tab_h]);
-
-    // Vertical rib connecting shelf to the right wall above the cable
-    // channel (channel ends at z = 5).  Rib spans z = 5 to lip_h + wall
-    // and overlaps 1 mm into the wall for a solid bond.
-    translate([outer_w - 1, tab_start, 5])
-        cube([1 + 3, sg90_tab_w, lip_h + wall - 5]);
+    translate([outer_w - wall, tab_start, wall])
+        cube([wall + 3, sg90_tab_w, sg90_tab_h]);
 }
+
+// Helper: compute tab_start Y for a given button position
+function servo_tab_start(btn_y) =
+    (btn_y - cradle_y_offset) - sg90_shaft_offset
+    - (sg90_tab_w - sg90_body_w) / 2;
 
 module arm_slot(btn_y) {
     // Slot for the servo arm — centered on the shaft, which is now
@@ -189,9 +187,18 @@ module mobilemash_cradle() {
         servo_mount_holes(power_btn_y);
         servo_mount_holes(voldn_btn_y);
 
-        // Cable routing channel along right wall bottom
-        translate([outer_w - wall - 0.1, 5, 1])
-            cube([wall + 0.2, cradle_len - 10, 4]);
+        // Cable routing channel along right wall bottom, split to
+        // avoid cutting through the servo tab shelves.
+        cable_ch_x  = outer_w - wall - 0.1;
+        cable_ch_xw = wall + 0.2;
+        shelf1_start = servo_tab_start(power_btn_y);
+        shelf2_end   = servo_tab_start(voldn_btn_y) + sg90_tab_w;
+        // Segment before first shelf
+        translate([cable_ch_x, 5, 1])
+            cube([cable_ch_xw, shelf1_start - 5, 4]);
+        // Segment after second shelf
+        translate([cable_ch_x, shelf2_end, 1])
+            cube([cable_ch_xw, cradle_len - 5 - shelf2_end, 4]);
     }
 }
 

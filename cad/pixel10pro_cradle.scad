@@ -148,39 +148,53 @@ module arm_slot(btn_y) {
 }
 
 module servo_mount_holes(btn_y) {
-    // Vertical screw holes (Z direction) through the tab shelf,
+    // Vertical screw holes (Z direction) through the bosses and shelf,
     // matching the SG90 tab holes which are parallel to the shaft axis.
-    // Screws go down through the tab ears into the shelf below.
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
     tab_extent = (sg90_tab_w - sg90_body_w) / 2;
 
     tab_z = servo_bottom_z + sg90_flipped_tab_z;
-    shelf_x = outer_w + sg90_body_d / 2;  // centered on body depth
+    boss_x = outer_w + sg90_body_d / 2;
 
     for (hole_y = [body_start_y - tab_extent + 2,
                    body_start_y + sg90_body_w + tab_extent - 2]) {
-        translate([shelf_x,
+        translate([boss_x,
                    hole_y,
-                   tab_z - 1])
-            cylinder(h = sg90_tab_h + shelf_depth + 2, d = m2_hole_d, $fn = 20);
+                   tab_z - shelf_depth - 0.1])
+            cylinder(h = shelf_depth + sg90_tab_h + 2,
+                     d = m2_hole_d, $fn = 20);
     }
 }
 
 module servo_tab_shelf(btn_y) {
-    // Wide shelf on the outside of the right wall for the flipped
-    // servo tabs to rest on.  Extends under the full body width so
-    // vertical M2 screws can go down through the tab holes into it.
+    // Thin shelf for the tabs to rest on, plus screw bosses at the
+    // two tab-ear positions for vertical M2 screw engagement.
+    // The shelf is only sg90_tab_h thick so the body can hang below
+    // freely without collision.
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
     tab_start = body_start_y - (sg90_tab_w - sg90_body_w) / 2;
+    tab_extent = (sg90_tab_w - sg90_body_w) / 2;
 
     tab_z = servo_bottom_z + sg90_flipped_tab_z;
+    shelf_x = outer_w - wall;
+    shelf_w = wall + sg90_body_d + 2;
 
-    // Shelf: starts inside the wall for bonding, extends outward
-    // past the body depth, thick enough for screw engagement.
-    translate([outer_w - wall, tab_start, tab_z - shelf_depth])
-        cube([wall + sg90_body_d + 2, sg90_tab_w, shelf_depth]);
+    // Thin resting shelf (full tab width)
+    translate([shelf_x, tab_start, tab_z])
+        cube([shelf_w, sg90_tab_w, sg90_tab_h]);
+
+    // Screw bosses — cylindrical columns below each tab ear,
+    // extending shelf_depth below the shelf for screw bite.
+    // Positioned in the tab ears (outside the body Y range)
+    // so they don't block the body.
+    boss_x = outer_w + sg90_body_d / 2;
+    for (hole_y = [body_start_y - tab_extent + 2,
+                   body_start_y + sg90_body_w + tab_extent - 2]) {
+        translate([boss_x, hole_y, tab_z - shelf_depth])
+            cylinder(h = shelf_depth, d = 6, $fn = 20);
+    }
 }
 
 function servo_tab_start(btn_y) =

@@ -5,7 +5,7 @@
 
 use <pixel10pro_cradle.scad>
 
-// ── Phone ───────────────────────────────────────────────────────────────
+// ── Dimensions (duplicated for standalone use) ──────────────────────────
 phone_w = 72;
 phone_h = 152.8;
 phone_d = 8.6;
@@ -14,7 +14,6 @@ wall = 2.5;
 cradle_len = 90;
 cradle_y_offset = 20;
 
-// ── SG90 dimensions (duplicated for standalone use) ─────────────────────
 sg90_body_w  = 22.7;
 sg90_body_d  = 11.8;
 sg90_body_h  = 22.2;
@@ -28,64 +27,70 @@ outer_w = inner_w + 2 * wall;
 power_btn_y = 40;
 voldn_btn_y = 60;
 
-// ── Colors ──────────────────────────────────────────────────────────────
+arm_z = wall + phone_d / 2;
+servo_bottom_z = arm_z;
+
+// ── Component models ────────────────────────────────────────────────────
 
 module phone() {
     color([0.15, 0.15, 0.15, 0.7])
         translate([wall + clearance,
-                   -cradle_y_offset,  // phone top at y=0 in phone coords
+                   -cradle_y_offset,
                    wall])
             cube([phone_w, phone_h, phone_d]);
 }
 
 module sg90_servo(btn_y) {
     local_y = btn_y - cradle_y_offset;
-    body_start = local_y - sg90_shaft_offset;
+    body_start_y = local_y - sg90_shaft_offset;
 
-    // Body — sits in the wall pocket, protruding outward
-    servo_x = outer_w - wall;
+    // Body — flipped upside-down, gear housing at bottom.
+    // Sits on outside of right wall.
+    servo_x = outer_w;
     color([0.2, 0.4, 0.8, 0.85])
-        translate([servo_x, body_start, wall])
+        translate([servo_x, body_start_y, servo_bottom_z])
             cube([sg90_body_d, sg90_body_w, sg90_body_h]);
 
-    // Mounting tabs
+    // Mounting tabs (at flipped position: ~6.7 mm from bottom)
     tab_extent = (sg90_tab_w - sg90_body_w) / 2;
+    tab_z = servo_bottom_z + 6.7;
     color([0.2, 0.4, 0.8, 0.85])
         translate([servo_x,
-                   body_start - tab_extent,
-                   wall + sg90_body_h/2 - sg90_tab_h/2])
+                   body_start_y - tab_extent,
+                   tab_z])
             cube([sg90_body_d, sg90_tab_w, sg90_tab_h]);
 
-    // Shaft nub — on top of body, offset from one end
-    shaft_x = servo_x + sg90_body_d/2;
-    shaft_y = body_start + sg90_shaft_offset;
-    shaft_z = wall + sg90_body_h;
+    // Shaft nub — bottom of flipped body, pointing down
+    shaft_x = servo_x + sg90_body_d / 2;
+    shaft_y = local_y;  // shaft aligns with button center
     color([1, 1, 1])
-        translate([shaft_x, shaft_y, shaft_z])
-            cylinder(h = 4, d = 5, $fn = 20);
+        translate([shaft_x, shaft_y, servo_bottom_z - 3])
+            cylinder(h = 3, d = 5, $fn = 20);
 
-    // Arm — straight bar from shaft toward the phone (-X),
-    // parallel to the body top face
+    // Arm — extends from shaft toward the phone (-X direction),
+    // sweeps in XY at arm_z height.  Shown in ~30° pressed position.
+    arm_len = 17;
+    press_angle = 30;  // degrees from straight -X toward +Y
+    arm_tip_x = shaft_x - arm_len * cos(press_angle);
+    arm_tip_y = shaft_y - arm_len * sin(press_angle);
     color([1, 1, 1])
-        translate([shaft_x - 18, shaft_y - 1, shaft_z + 2])
-            cube([18, 2, 2]);
+        translate([0, 0, arm_z - 1])
+            hull() {
+                translate([shaft_x, shaft_y, 0])
+                    cylinder(h = 2, d = 4, $fn = 16);
+                translate([arm_tip_x, arm_tip_y, 0])
+                    cylinder(h = 2, d = 3, $fn = 16);
+            }
 }
 
 module esp32_board() {
-    // Elegoo ESP32 DevKitV1: ~55 x 28 mm
-    // Sits on mount posts (at x=-3) entirely outside the left wall.
-    // Board centered on posts, extending in -X direction.
-    board_x = -3 - 25;  // board from x=-28 to x=0
+    board_x = -3 - 25;
     color([0.0, 0.5, 0.0, 0.85])
         translate([board_x, 10, wall + 8])
             cube([28, 55, 1.6]);
-
-    // USB connector (at one end of the board)
     color([0.7, 0.7, 0.7])
         translate([board_x + 9, 10 - 1, wall + 9.6])
             cube([10, 8, 3.5]);
-
-    // ESP32 module (metal shield, near other end)
     color([0.7, 0.7, 0.7])
         translate([board_x + 5, 10 + 36, wall + 9.6])
             cube([18, 16, 3]);
@@ -93,11 +98,10 @@ module esp32_board() {
 
 // ── Animated assembly ───────────────────────────────────────────────────
 
-// Camera orbits around the model center
 rot = $t * 360;
 
 rotate([0, 0, rot])
-translate([-outer_w/2, -cradle_len/2, -(17.5)/2]) {
+translate([-outer_w / 2, -cradle_len / 2, -(17.5) / 2]) {
     mobilemash_cradle();
     phone();
     sg90_servo(power_btn_y);

@@ -74,6 +74,9 @@ sg90_flipped_tab_z = 6.7;
 sg90_shaft_protrusion = 4;
 sg90_arm_drop = 3;    // arm center below gear-housing face
 
+// Shelf depth below the tab for vertical M2 screws to bite into.
+shelf_depth = 5;
+
 // Button positions from top of phone
 power_btn_y = 40;
 voldn_btn_y = 60;
@@ -145,37 +148,39 @@ module arm_slot(btn_y) {
 }
 
 module servo_mount_holes(btn_y) {
-    // Screw holes through the right wall at the flipped-servo tab
-    // positions.  Two screws per servo (one per tab ear).
+    // Vertical screw holes (Z direction) through the tab shelf,
+    // matching the SG90 tab holes which are parallel to the shaft axis.
+    // Screws go down through the tab ears into the shelf below.
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
     tab_extent = (sg90_tab_w - sg90_body_w) / 2;
 
-    tab_z = servo_bottom_z + sg90_flipped_tab_z + sg90_tab_h / 2;
+    tab_z = servo_bottom_z + sg90_flipped_tab_z;
+    shelf_x = outer_w + sg90_body_d / 2;  // centered on body depth
 
     for (hole_y = [body_start_y - tab_extent + 2,
                    body_start_y + sg90_body_w + tab_extent - 2]) {
-        translate([outer_w - wall / 2,
+        translate([shelf_x,
                    hole_y,
-                   tab_z])
-            rotate([0, 90, 0])
-                cylinder(h = wall + 2, d = m2_hole_d, center = true, $fn = 20);
+                   tab_z - 1])
+            cylinder(h = sg90_tab_h + shelf_depth + 2, d = m2_hole_d, $fn = 20);
     }
 }
 
 module servo_tab_shelf(btn_y) {
-    // Ledge on the outside of the right wall for the flipped
-    // servo tabs to rest on.
+    // Wide shelf on the outside of the right wall for the flipped
+    // servo tabs to rest on.  Extends under the full body width so
+    // vertical M2 screws can go down through the tab holes into it.
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
     tab_start = body_start_y - (sg90_tab_w - sg90_body_w) / 2;
 
     tab_z = servo_bottom_z + sg90_flipped_tab_z;
 
-    // The tab-ear portions of the shelf are outside the pocket's Y
-    // range and bond to the intact wall.
-    translate([outer_w - wall, tab_start, tab_z])
-        cube([wall + 3, sg90_tab_w, sg90_tab_h]);
+    // Shelf: starts inside the wall for bonding, extends outward
+    // past the body depth, thick enough for screw engagement.
+    translate([outer_w - wall, tab_start, tab_z - shelf_depth])
+        cube([wall + sg90_body_d + 2, sg90_tab_w, shelf_depth]);
 }
 
 function servo_tab_start(btn_y) =

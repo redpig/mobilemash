@@ -20,6 +20,7 @@ sg90_body_h  = 22.2;
 sg90_tab_w   = 32.5;
 sg90_tab_h   = 2.5;
 sg90_shaft_offset = 6;
+sg90_arm_drop = 3;
 
 inner_w = phone_w + 2 * clearance;
 outer_w = inner_w + 2 * wall;
@@ -28,30 +29,37 @@ power_btn_y = 40;
 voldn_btn_y = 60;
 
 arm_z = wall + phone_d / 2;
-servo_bottom_z = arm_z;
+servo_bottom_z = arm_z + sg90_arm_drop;
 
 // ── Component models ────────────────────────────────────────────────────
 
 module phone() {
+    // Phone body
     color([0.15, 0.15, 0.15, 0.7])
         translate([wall + clearance,
                    -cradle_y_offset,
                    wall])
             cube([phone_w, phone_h, phone_d]);
+
+    // Camera bump on the back (protrudes below the phone)
+    color([0.1, 0.1, 0.1, 0.8])
+        translate([wall + clearance + 2,      // 2 mm inset
+                   -cradle_y_offset + 10,     // 10 mm from phone top
+                   wall - 3])                 // 3 mm below phone back
+            cube([phone_w - 4, 26, 3]);
 }
 
 module sg90_servo(btn_y) {
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
 
-    // Body — flipped upside-down, gear housing at bottom.
-    // Sits on outside of right wall.
     servo_x = outer_w;
+    // Body — flipped, gear housing at bottom
     color([0.2, 0.4, 0.8, 0.85])
         translate([servo_x, body_start_y, servo_bottom_z])
             cube([sg90_body_d, sg90_body_w, sg90_body_h]);
 
-    // Mounting tabs (at flipped position: ~6.7 mm from bottom)
+    // Mounting tabs
     tab_extent = (sg90_tab_w - sg90_body_w) / 2;
     tab_z = servo_bottom_z + 6.7;
     color([0.2, 0.4, 0.8, 0.85])
@@ -60,17 +68,16 @@ module sg90_servo(btn_y) {
                    tab_z])
             cube([sg90_body_d, sg90_tab_w, sg90_tab_h]);
 
-    // Shaft nub — bottom of flipped body, pointing down
+    // Shaft nub — below gear housing
     shaft_x = servo_x + sg90_body_d / 2;
-    shaft_y = local_y;  // shaft aligns with button center
+    shaft_y = local_y;
     color([1, 1, 1])
-        translate([shaft_x, shaft_y, servo_bottom_z - 3])
-            cylinder(h = 3, d = 5, $fn = 20);
+        translate([shaft_x, shaft_y, servo_bottom_z - 4])
+            cylinder(h = 4, d = 5, $fn = 20);
 
-    // Arm — extends from shaft toward the phone (-X direction),
-    // sweeps in XY at arm_z height.  Shown in ~30° pressed position.
+    // Arm — sweeps in XY at arm_z, shown in ~30° pressed position
     arm_len = 17;
-    press_angle = 30;  // degrees from straight -X toward +Y
+    press_angle = 30;
     arm_tip_x = shaft_x - arm_len * cos(press_angle);
     arm_tip_y = shaft_y - arm_len * sin(press_angle);
     color([1, 1, 1])

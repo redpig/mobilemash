@@ -7,6 +7,8 @@
  *
  * Phone dimensions (Pixel 10 Pro):
  *   152.8 x 72 x 8.6 mm
+ *   Camera bump: 3 mm protrusion, starts 10 mm from top, ~23 mm tall,
+ *                2 mm inset from each side edge.
  *
  * Button layout (right side, measured from top of phone):
  *   Power button center:      ~40 mm from top
@@ -14,7 +16,9 @@
  *   (Both buttons are ~12 mm long)
  *
  * SG90 servo body: 22.2 x 11.8 x 22.7 mm  (h x d x w)
- * SG90 mounting tabs: 32.5 mm total width (tab-to-tab along body w)
+ * SG90 mounting tabs: 32.5 mm total (tab-to-tab along body w)
+ * SG90 shaft protrusion below gear housing: ~4 mm
+ * SG90 arm center when flipped: ~3 mm below gear housing face
  *
  * Print settings:
  *   Layer height: 0.2 mm
@@ -39,6 +43,20 @@ lip_h = 15;
 cradle_len = 90;
 cradle_y_offset = 20;
 
+// ── Camera bump (Pixel 10 Pro) ──────────────────────────────────────────
+// Measured from the phone back surface.
+cam_bump_protrusion = 3;     // mm above back surface
+cam_bump_from_top   = 10;    // mm from top of phone to bump start
+cam_bump_height     = 26;    // mm tall (23 mm + margin)
+cam_bump_inset      = 2;     // mm inset from each side edge
+// In cradle coords the bump spans Y = (cam_bump_from_top - cradle_y_offset)
+// to Y = (cam_bump_from_top + cam_bump_height - cradle_y_offset).
+// If cam_bump_from_top < cradle_y_offset the bump starts before the
+// cradle, but we still need to cut any overlap.
+cam_bump_y_start = max(0, cam_bump_from_top - cradle_y_offset);
+cam_bump_y_end   = cam_bump_from_top + cam_bump_height - cradle_y_offset;
+cam_bump_w       = phone_w - 2 * cam_bump_inset;
+
 // ── SG90 servo dimensions ───────────────────────────────────────────────
 sg90_body_w  = 22.7;  // body length (along Y in cradle)
 sg90_body_d  = 11.8;  // body depth  (along X, away from phone)
@@ -50,6 +68,11 @@ sg90_shaft_offset = 6; // shaft center from one end of body along Y
 // When the servo is flipped upside-down the mounting-tab ears are
 // approximately 6.7 mm above the new bottom (gear-housing face).
 sg90_flipped_tab_z = 6.7;
+
+// Shaft protrudes ~4 mm below the gear housing face.
+// Arm horn center sits ~3 mm below the gear housing face.
+sg90_shaft_protrusion = 4;
+sg90_arm_drop = 3;    // arm center below gear-housing face
 
 // Button positions from top of phone
 power_btn_y = 40;
@@ -66,9 +89,9 @@ outer_w = inner_w + 2 * wall;
 // coincide with the middle of the phone's side face (where buttons are).
 arm_z = wall + phone_d / 2;   // ≈ 6.8 mm
 
-// The flipped servo body sits with its gear-housing face (shaft end)
-// at the bottom.  The shaft/arm is at approximately arm_z.
-servo_bottom_z = arm_z;
+// The gear-housing face must be sg90_arm_drop above arm_z so the arm
+// ends up at the correct height.
+servo_bottom_z = arm_z + sg90_arm_drop;   // ≈ 9.8 mm
 
 // ── Modules ─────────────────────────────────────────────────────────────
 
@@ -76,8 +99,18 @@ module cradle_base() {
     difference() {
         cube([outer_w, cradle_len, lip_h + wall]);
 
+        // Inner pocket for the phone (open top)
         translate([wall, -0.1, wall])
             cube([inner_w, cradle_len + 0.2, lip_h + 1]);
+
+        // Camera bump relief — cut all the way through the base
+        // so the bump can protrude below.
+        if (cam_bump_y_end > 0) {
+            translate([wall + clearance + cam_bump_inset,
+                       cam_bump_y_start,
+                       -0.1])
+                cube([cam_bump_w, cam_bump_y_end - cam_bump_y_start, wall + 0.2]);
+        }
     }
 }
 
@@ -86,7 +119,6 @@ module cradle_base() {
 
 module servo_pocket(btn_y) {
     // Cut the right wall where the servo body overlaps it.
-    // Only the portion of the body within wall height needs a pocket.
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
 
@@ -105,9 +137,10 @@ module arm_slot(btn_y) {
     // servo arm can swing through and press the phone button.
     local_y = btn_y - cradle_y_offset;
 
+    // Slot centered on arm_z, tall enough for arm clearance.
     translate([outer_w - wall - 0.1,
                local_y - 5,
-               arm_z - 4])
+               arm_z - 3])
         cube([wall + 0.2, 10, 6]);
 }
 
@@ -131,7 +164,7 @@ module servo_mount_holes(btn_y) {
 }
 
 module servo_tab_shelf(btn_y) {
-    // Small ledge on the outside of the right wall for the flipped
+    // Ledge on the outside of the right wall for the flipped
     // servo tabs to rest on.
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
@@ -139,10 +172,8 @@ module servo_tab_shelf(btn_y) {
 
     tab_z = servo_bottom_z + sg90_flipped_tab_z;
 
-    // Shelf sits on the outer wall face at the tab Z height.
-    // At this Z the wall is intact (pocket is above arm_z, shelf is
-    // within the pocket range but the tab-ear portions of the shelf
-    // are outside the pocket's Y range, so they bond to intact wall).
+    // The tab-ear portions of the shelf are outside the pocket's Y
+    // range and bond to the intact wall.
     translate([outer_w - wall, tab_start, tab_z])
         cube([wall + 3, sg90_tab_w, sg90_tab_h]);
 }

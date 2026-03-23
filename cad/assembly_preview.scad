@@ -42,51 +42,53 @@ module sg90_servo(btn_y) {
     local_y = btn_y - cradle_y_offset;
     body_start = local_y - sg90_shaft_offset;
 
-    // Body
+    // Body — sits in the wall pocket, protruding outward
+    servo_x = outer_w - wall;
     color([0.2, 0.4, 0.8, 0.85])
-        translate([outer_w, body_start, wall])
+        translate([servo_x, body_start, wall])
             cube([sg90_body_d, sg90_body_w, sg90_body_h]);
 
     // Mounting tabs
     tab_extent = (sg90_tab_w - sg90_body_w) / 2;
     color([0.2, 0.4, 0.8, 0.85])
-        translate([outer_w,
+        translate([servo_x,
                    body_start - tab_extent,
                    wall + sg90_body_h/2 - sg90_tab_h/2])
             cube([sg90_body_d, sg90_tab_w, sg90_tab_h]);
 
-    // Shaft nub
+    // Shaft nub — on top of body, offset from one end
+    shaft_x = servo_x + sg90_body_d/2;
+    shaft_y = body_start + sg90_shaft_offset;
+    shaft_z = wall + sg90_body_h;
     color([1, 1, 1])
-        translate([outer_w + sg90_body_d/2,
-                   body_start + sg90_shaft_offset,
-                   wall + sg90_body_h])
+        translate([shaft_x, shaft_y, shaft_z])
             cylinder(h = 4, d = 5, $fn = 20);
 
-    // Arm (in pressed-ish position, angled toward phone)
+    // Arm — straight bar from shaft toward the phone (-X),
+    // parallel to the body top face
     color([1, 1, 1])
-        translate([outer_w + sg90_body_d/2,
-                   body_start + sg90_shaft_offset,
-                   wall + sg90_body_h + 2])
-            rotate([0, -45, 0])
-                translate([-1.5, -1, 0])
-                    cube([3, 2, 18]);
+        translate([shaft_x - 18, shaft_y - 1, shaft_z + 2])
+            cube([18, 2, 2]);
 }
 
 module esp32_board() {
     // Elegoo ESP32 DevKitV1: ~55 x 28 mm
+    // Sits on mount posts (at x=-3) entirely outside the left wall.
+    // Board centered on posts, extending in -X direction.
+    board_x = -3 - 25;  // board from x=-28 to x=0
     color([0.0, 0.5, 0.0, 0.85])
-        translate([-3 - 14, 10, wall + 8])
+        translate([board_x, 10, wall + 8])
             cube([28, 55, 1.6]);
 
-    // USB connector
+    // USB connector (at one end of the board)
     color([0.7, 0.7, 0.7])
-        translate([-3 - 5, 10 - 2, wall + 8])
-            cube([10, 8, 4]);
+        translate([board_x + 9, 10 - 1, wall + 9.6])
+            cube([10, 8, 3.5]);
 
-    // ESP32 module (metal shield)
+    // ESP32 module (metal shield, near other end)
     color([0.7, 0.7, 0.7])
-        translate([-3 - 10, 10 + 35, wall + 9.6])
-            cube([18, 18, 3]);
+        translate([board_x + 5, 10 + 36, wall + 9.6])
+            cube([18, 16, 3]);
 }
 
 // ── Animated assembly ───────────────────────────────────────────────────

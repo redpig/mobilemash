@@ -52,28 +52,41 @@ module phone() {
 module sg90_servo(btn_y) {
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
-
-    servo_x = outer_w;
-    // Body — flipped, gear housing at bottom
-    color([0.2, 0.4, 0.8, 0.85])
-        translate([servo_x, body_start_y, servo_bottom_z])
-            cube([sg90_body_d, sg90_body_w, sg90_body_h]);
-
-    // Mounting tabs
     tab_extent = (sg90_tab_w - sg90_body_w) / 2;
     tab_z = servo_bottom_z + 6.7;
-    color([0.2, 0.4, 0.8, 0.85])
-        translate([servo_x,
-                   body_start_y - tab_extent,
-                   tab_z])
-            cube([sg90_body_d, sg90_tab_w, sg90_tab_h]);
 
-    // Shaft nub — below gear housing
+    servo_x = outer_w;
     shaft_x = servo_x + sg90_body_d / 2;
     shaft_y = local_y;
+
+    // Body below tabs (gear housing end)
+    color([0.2, 0.4, 0.8, 0.85])
+        translate([servo_x, body_start_y, servo_bottom_z])
+            cube([sg90_body_d, sg90_body_w, 6.7]);
+
+    // Body above tabs
+    color([0.2, 0.4, 0.8, 0.85])
+        translate([servo_x, body_start_y, tab_z + sg90_tab_h])
+            cube([sg90_body_d, sg90_body_w,
+                  sg90_body_h - 6.7 - sg90_tab_h]);
+
+    // Mounting tab ears (only the parts outside the body)
+    color([0.25, 0.45, 0.85, 0.85])
+        for (dy = [body_start_y - tab_extent,
+                   body_start_y + sg90_body_w]) {
+            translate([servo_x, dy, tab_z])
+                cube([sg90_body_d, tab_extent, sg90_tab_h]);
+        }
+
+    // Gear housing bump on bottom face
+    color([0.2, 0.4, 0.8])
+        translate([shaft_x, shaft_y, servo_bottom_z - 2])
+            cylinder(h = 2, d = 8, $fn = 20);
+
+    // Shaft nub — below gear housing
     color([1, 1, 1])
         translate([shaft_x, shaft_y, servo_bottom_z - 4])
-            cylinder(h = 4, d = 5, $fn = 20);
+            cylinder(h = 2, d = 5, $fn = 20);
 
     // Arm — sweeps in XY at arm_z, shown in ~30° pressed position
     arm_len = 17;

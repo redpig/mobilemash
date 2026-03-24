@@ -111,26 +111,24 @@ module cradle_base() {
     }
 }
 
-module servo_pocket(btn_y) {
-    // Cut the right wall where the servo body sits.
+module servo_cutout(btn_y) {
+    // Single cutout through the right wall for the servo body AND arm.
+    // Extends from arm_z - 3 to the wall top — no separate pocket
+    // and arm slot.
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
+    tab_extent = (sg90_tab_w - sg90_body_w) / 2;
+
+    // Use the full tab span in Y so bosses don't block the opening.
+    cutout_y_start = body_start_y - tab_extent;
+    cutout_y_end   = body_start_y + sg90_body_w + tab_extent;
 
     translate([outer_w - wall - 0.1,
-               body_start_y,
-               servo_bottom_z])
-        cube([wall + 0.2,
-              sg90_body_w,
-              wall_top - servo_bottom_z + 0.1]);
-}
-
-module arm_slot(btn_y) {
-    local_y = btn_y - cradle_y_offset;
-
-    translate([outer_w - wall - 0.1,
-               local_y - 5,
+               cutout_y_start,
                arm_z - 3])
-        cube([wall + 0.2, 10, 6]);
+        cube([wall + 0.2,
+              cutout_y_end - cutout_y_start,
+              wall_top - (arm_z - 3) + 0.1]);
 }
 
 module servo_mount(btn_y) {
@@ -204,11 +202,8 @@ module mobilemash_cradle() {
             esp32_mount();
         }
 
-        servo_pocket(power_btn_y);
-        servo_pocket(voldn_btn_y);
-
-        arm_slot(power_btn_y);
-        arm_slot(voldn_btn_y);
+        servo_cutout(power_btn_y);
+        servo_cutout(voldn_btn_y);
 
         servo_mount_holes(power_btn_y);
         servo_mount_holes(voldn_btn_y);

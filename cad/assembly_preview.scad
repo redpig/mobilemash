@@ -20,7 +20,10 @@ sg90_body_h  = 22.2;
 sg90_tab_w   = 32.5;
 sg90_tab_h   = 2.5;
 sg90_shaft_offset = 6;
+sg90_flipped_tab_z = 6.7;
 sg90_arm_drop = 4;
+sg90_shaft_protrusion = 5;
+shelf_thickness = 5;
 
 inner_w = phone_w + 2 * clearance;
 outer_w = inner_w + 2 * wall;
@@ -30,22 +33,22 @@ voldn_btn_y = 60;
 
 arm_z = wall + phone_d / 2;
 servo_bottom_z = arm_z + sg90_arm_drop;
+wall_top = servo_bottom_z + sg90_flipped_tab_z + sg90_tab_h;
 
 // ── Component models ────────────────────────────────────────────────────
 
 module phone() {
-    // Phone body
     color([0.15, 0.15, 0.15, 0.7])
         translate([wall + clearance,
                    -cradle_y_offset,
                    wall])
             cube([phone_w, phone_h, phone_d]);
 
-    // Camera bump on the back (protrudes below the phone)
+    // Camera bump
     color([0.1, 0.1, 0.1, 0.8])
-        translate([wall + clearance + 2,      // 2 mm inset
-                   -cradle_y_offset + 10,     // 10 mm from phone top
-                   wall - 3])                 // 3 mm below phone back
+        translate([wall + clearance + 2,
+                   -cradle_y_offset + 10,
+                   wall - 3])
             cube([phone_w - 4, 26, 3]);
 }
 
@@ -53,7 +56,7 @@ module sg90_servo(btn_y) {
     local_y = btn_y - cradle_y_offset;
     body_start_y = local_y - sg90_shaft_offset;
     tab_extent = (sg90_tab_w - sg90_body_w) / 2;
-    tab_z = servo_bottom_z + 6.7;
+    tab_z = servo_bottom_z + sg90_flipped_tab_z;
 
     servo_x = outer_w;
     shaft_x = servo_x + sg90_body_d / 2;
@@ -62,13 +65,13 @@ module sg90_servo(btn_y) {
     // Body below tabs (gear housing end)
     color([0.2, 0.4, 0.8, 0.85])
         translate([servo_x, body_start_y, servo_bottom_z])
-            cube([sg90_body_d, sg90_body_w, 6.7]);
+            cube([sg90_body_d, sg90_body_w, sg90_flipped_tab_z]);
 
-    // Body above tabs
+    // Body above tabs (extends above shelf)
     color([0.2, 0.4, 0.8, 0.85])
         translate([servo_x, body_start_y, tab_z + sg90_tab_h])
             cube([sg90_body_d, sg90_body_w,
-                  sg90_body_h - 6.7 - sg90_tab_h]);
+                  sg90_body_h - sg90_flipped_tab_z - sg90_tab_h]);
 
     // Mounting tab ears (only the parts outside the body)
     color([0.25, 0.45, 0.85, 0.85])
@@ -78,17 +81,17 @@ module sg90_servo(btn_y) {
                 cube([sg90_body_d, tab_extent, sg90_tab_h]);
         }
 
-    // Gear housing bump on bottom face
+    // Gear housing bump
     color([0.2, 0.4, 0.8])
         translate([shaft_x, shaft_y, servo_bottom_z - 2])
             cylinder(h = 2, d = 8, $fn = 20);
 
-    // Shaft nub — below gear housing
+    // Shaft nub
     color([1, 1, 1])
-        translate([shaft_x, shaft_y, servo_bottom_z - 5])
+        translate([shaft_x, shaft_y, servo_bottom_z - sg90_shaft_protrusion])
             cylinder(h = 3, d = 5, $fn = 20);
 
-    // Arm — sweeps in XY at arm_z, shown in ~30° pressed position
+    // Arm — sweeps in XY at arm_z
     arm_len = 17;
     press_angle = 30;
     arm_tip_x = shaft_x - arm_len * cos(press_angle);
@@ -121,7 +124,7 @@ module esp32_board() {
 rot = $t * 360;
 
 rotate([0, 0, rot])
-translate([-outer_w / 2, -cradle_len / 2, -(17.5) / 2]) {
+translate([-outer_w / 2, -cradle_len / 2, -wall_top / 2]) {
     mobilemash_cradle();
     phone();
     sg90_servo(power_btn_y);

@@ -20,7 +20,7 @@ sg90_body_h  = 22.2;
 sg90_tab_w   = 32.5;
 sg90_tab_h   = 2.5;
 sg90_shaft_offset = 6;
-sg90_arm_drop = 3;
+sg90_arm_drop = 4;
 
 inner_w = phone_w + 2 * clearance;
 outer_w = inner_w + 2 * wall;
@@ -85,8 +85,8 @@ module sg90_servo(btn_y) {
 
     // Shaft nub — below gear housing
     color([1, 1, 1])
-        translate([shaft_x, shaft_y, servo_bottom_z - 4])
-            cylinder(h = 2, d = 5, $fn = 20);
+        translate([shaft_x, shaft_y, servo_bottom_z - 5])
+            cylinder(h = 3, d = 5, $fn = 20);
 
     // Arm — sweeps in XY at arm_z, shown in ~30° pressed position
     arm_len = 17;

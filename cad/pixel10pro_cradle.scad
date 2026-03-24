@@ -69,10 +69,12 @@ sg90_shaft_offset = 6; // shaft center from one end of body along Y
 // approximately 6.7 mm above the new bottom (gear-housing face).
 sg90_flipped_tab_z = 6.7;
 
-// Shaft protrudes ~4 mm below the gear housing face.
-// Arm horn center sits ~3 mm below the gear housing face.
-sg90_shaft_protrusion = 4;
-sg90_arm_drop = 3;    // arm center below gear-housing face
+// Measured: 13 mm from tab screw-hole center to shaft tip.
+//   screw-hole center is at flipped_tab_z + tab_h/2 = 7.95 mm
+//   from gear-housing face, so shaft protrudes 13 - 7.95 ≈ 5 mm.
+// Arm horn sits ~1 mm above the shaft tip.
+sg90_shaft_protrusion = 5;
+sg90_arm_drop = 4;    // arm center below gear-housing face
 
 // Shelf depth below the tab for vertical M2 screws to bite into.
 shelf_depth = 5;

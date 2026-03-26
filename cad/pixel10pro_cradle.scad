@@ -175,14 +175,15 @@ module servo_mount_holes(btn_y) {
 
 module esp32_mount() {
     for (dy = [10, 58]) {
-        translate([-3, dy, wall])
+        translate([-3, dy, 0])
             difference() {
                 union() {
-                    cylinder(h = 8, d = 6, $fn = 20);
+                    cylinder(h = wall + 8, d = 6, $fn = 20);
                     translate([0, -3, 0])
-                        cube([3, 6, 8]);
+                        cube([3, 6, wall + 8]);
                 }
-                cylinder(h = 9, d = m2_hole_d, $fn = 20);
+                translate([0, 0, wall])
+                    cylinder(h = 9, d = m2_hole_d, $fn = 20);
             }
     }
 }

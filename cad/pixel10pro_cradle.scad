@@ -173,10 +173,6 @@ module servo_mount_holes(btn_y) {
     }
 }
 
-function servo_tab_start(btn_y) =
-    (btn_y - cradle_y_offset) - sg90_shaft_offset
-    - (sg90_tab_w - sg90_body_w) / 2;
-
 module esp32_mount() {
     for (dy = [10, 58]) {
         translate([-3, dy, wall])
@@ -207,17 +203,6 @@ module mobilemash_cradle() {
 
         servo_mount_holes(power_btn_y);
         servo_mount_holes(voldn_btn_y);
-
-        // Cable routing channel
-        cable_ch_x  = outer_w - wall - 0.1;
-        cable_ch_xw = wall + 0.2;
-        shelf1_start = servo_tab_start(power_btn_y);
-        shelf2_end   = servo_tab_start(voldn_btn_y) + sg90_tab_w;
-
-        translate([cable_ch_x, 5, 1])
-            cube([cable_ch_xw, shelf1_start - 5, 4]);
-        translate([cable_ch_x, shelf2_end, 1])
-            cube([cable_ch_xw, cradle_len - 5 - shelf2_end, 4]);
     }
 }
 

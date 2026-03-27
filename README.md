@@ -1,0 +1,93 @@
+# MobileMash - ESP32 Phone Button Presser
+
+A 3D-printable, ESP32-controlled servo harness for programmatically pressing
+phone buttons. Primary use case: booting phones into fastboot mode unattended.
+
+## Supported Phones
+
+| Phone | Status |
+|-------|--------|
+| Pixel 10 Pro | v1 |
+
+## How It Works
+
+Two SG90 micro servos are mounted in a 3D-printed cradle that clips around the
+phone. Each servo has a small arm that presses a button (power, volume-down).
+An ESP32 dev board drives the servos and accepts commands over USB serial.
+
+### Fastboot Sequence
+
+1. **Force shutdown** - Press and hold power for up to 30 seconds (or until
+   told to release).
+2. **Enter fastboot** - Hold volume-down, then briefly press power. Release
+   when told or after a safety timeout.
+
+## Hardware BOM
+
+| Part | Qty | Notes |
+|------|-----|-------|
+| ESP32 DevKit v1 (or similar) | 1 | Any ESP32 board with USB |
+| SG90 micro servo | 2 | 9g, 180-degree |
+| M2x8 self-tapping screws | 4 | Mount servos to cradle |
+| Rubber/silicone bumper pads | 2 | Glue to servo arms for grip |
+| USB-A to micro-USB cable | 1 | Power + data to ESP32 |
+| 470uF electrolytic capacitor | 1 | Optional, across servo 5V/GND |
+
+## Wiring
+
+```
+ESP32 GPIO 13 --> Power servo signal (orange)
+ESP32 GPIO 14 --> Volume-down servo signal (orange)
+ESP32 5V      --> Both servo VCC (red)
+ESP32 GND     --> Both servo GND (brown)
+```
+
+## Firmware
+
+Built with PlatformIO (Arduino framework).
+
+```bash
+cd firmware
+pio run -t upload
+```
+
+### Serial Protocol (115200 baud)
+
+Commands are newline-terminated ASCII:
+
+| Command | Description |
+|---------|-------------|
+| `PRESS_POWER <ms>` | Press power button for `<ms>` milliseconds |
+| `PRESS_VOLDN <ms>` | Press volume-down for `<ms>` milliseconds |
+| `FASTBOOT [shutdown_ms] [combo_ms]` | Run full fastboot entry sequence |
+| `RELEASE_ALL` | Immediately release all buttons |
+| `STATUS` | Report current state |
+| `PING` | Returns `PONG` |
+
+Responses are newline-terminated:
+
+| Response | Meaning |
+|----------|---------|
+| `OK <detail>` | Command accepted / completed |
+| `ERR <detail>` | Error |
+| `STATE <json>` | Status response |
+| `PONG` | Ping reply |
+
+## 3D Printing
+
+OpenSCAD source in `cad/`. Export STL and print with:
+- Material: PLA or PETG
+- Layer height: 0.2mm
+- Infill: 20%+
+- Supports: not required
+
+## Host Tool
+
+```bash
+pip install pyserial
+python host/mobilemash_cli.py --port /dev/ttyUSB0 fastboot
+```
+
+## License
+
+Apache 2.0

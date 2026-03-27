@@ -6,12 +6,13 @@
 use <pixel10pro_cradle.scad>
 
 phone_w = 72; phone_h = 152.8; phone_d = 8.6;
-clearance = 1.0; wall = 2.5; lip_h = 15;
+clearance = 1.0; wall = 3.5; lip_h = 15;
 cradle_len = 90; cradle_y_offset = 20;
 
 sg90_body_w = 22.7; sg90_body_d = 11.8; sg90_body_h = 22.2;
 sg90_tab_w = 32.5; sg90_tab_h = 2.5; sg90_shaft_offset = 6;
 sg90_flipped_tab_z = 6.7; sg90_arm_drop = 4; sg90_shaft_protrusion = 5;
+sg90_screw_spacing = 27;
 
 inner_w = phone_w + 2 * clearance;
 outer_w = inner_w + 2 * wall;
@@ -22,6 +23,7 @@ power_btn_y = 40; voldn_btn_y = 60;
 arm_z = wall + phone_d / 2;
 servo_bottom_z = arm_z + sg90_arm_drop;
 boss_height = servo_bottom_z + sg90_flipped_tab_z;
+boss_x = -(sg90_body_d / 2);
 
 module phone() {
     color([0.15, 0.15, 0.15, 0.7])
@@ -34,30 +36,29 @@ module phone() {
 
 module sg90_servo(btn_y) {
     local_y = btn_y - cradle_y_offset;
-    body_start_y = local_y - sg90_shaft_offset;
-    tab_extent = (sg90_tab_w - sg90_body_w) / 2;
     tab_z = servo_bottom_z + sg90_flipped_tab_z;
 
-    servo_x = outer_w;
+    // Body sits outside the left wall
+    servo_x = -sg90_body_d;
     shaft_x = servo_x + sg90_body_d / 2;
     shaft_y = local_y;
 
     // Body below tabs
     color([0.2, 0.4, 0.8, 0.85])
-        translate([servo_x, body_start_y, servo_bottom_z])
+        translate([servo_x, local_y - sg90_body_w/2, servo_bottom_z])
             cube([sg90_body_d, sg90_body_w, sg90_flipped_tab_z]);
 
     // Body above tabs
     color([0.2, 0.4, 0.8, 0.85])
-        translate([servo_x, body_start_y, tab_z + sg90_tab_h])
+        translate([servo_x, local_y - sg90_body_w/2, tab_z + sg90_tab_h])
             cube([sg90_body_d, sg90_body_w,
                   sg90_body_h - sg90_flipped_tab_z - sg90_tab_h]);
 
     // Tab ears
     color([0.25, 0.45, 0.85, 0.85])
-        for (dy = [body_start_y - tab_extent, body_start_y + sg90_body_w])
+        for (dy = [local_y - sg90_tab_w/2, local_y + sg90_body_w/2])
             translate([servo_x, dy, tab_z])
-                cube([sg90_body_d, tab_extent, sg90_tab_h]);
+                cube([sg90_body_d, (sg90_tab_w - sg90_body_w)/2, sg90_tab_h]);
 
     // Gear housing + shaft
     color([0.2, 0.4, 0.8])
@@ -67,27 +68,27 @@ module sg90_servo(btn_y) {
         translate([shaft_x, shaft_y, servo_bottom_z - sg90_shaft_protrusion])
             cylinder(h = 3, d = 5, $fn = 20);
 
-    // Arm at button height
+    // Arm at button height — pointing toward phone (+X)
     arm_len = 17; press_angle = 30;
     color([1, 1, 1])
         translate([0, 0, arm_z - 1])
             hull() {
                 translate([shaft_x, shaft_y, 0])
                     cylinder(h = 2, d = 4, $fn = 16);
-                translate([shaft_x - arm_len * cos(press_angle),
+                translate([shaft_x + arm_len * cos(press_angle),
                            shaft_y - arm_len * sin(press_angle), 0])
                     cylinder(h = 2, d = 3, $fn = 16);
             }
 }
 
 module esp32_board() {
-    board_x = -3 - 25;
+    board_x = outer_w + 3 - 25;
     color([0.0, 0.5, 0.0, 0.85])
-        translate([board_x, 10, wall + 8]) cube([28, 55, 1.6]);
+        translate([outer_w + 3 - 14, 10, wall + 8]) cube([28, 55, 1.6]);
     color([0.7, 0.7, 0.7])
-        translate([board_x + 9, 10 - 1, wall + 9.6]) cube([10, 8, 3.5]);
+        translate([outer_w + 3 - 5, 10 - 1, wall + 9.6]) cube([10, 8, 3.5]);
     color([0.7, 0.7, 0.7])
-        translate([board_x + 5, 10 + 36, wall + 9.6]) cube([18, 16, 3]);
+        translate([outer_w + 3 - 10, 10 + 36, wall + 9.6]) cube([18, 16, 3]);
 }
 
 rot = $t * 360;

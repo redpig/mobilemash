@@ -30,11 +30,28 @@ Run the following to send the command and display the response:
 python3 -c "
 import serial, time, sys
 
-cmd = '$ARGUMENTS'
-if not cmd.strip():
+raw = '$ARGUMENTS'.strip().upper()
+if not raw:
     print('Usage: /mobilemash <command> [args]')
-    print('Commands: PRESS_POWER <ms>, PRESS_VOLDN <ms>, RELEASE_ALL, FASTBOOT, PING, STATUS')
+    print('Commands: power [ms], voldn [ms], release, fastboot, ping, status')
     sys.exit(0)
+
+# Shorthand aliases
+parts = raw.split()
+aliases = {
+    'POWER': 'PRESS_POWER 500',
+    'VOLDN': 'PRESS_VOLDN 500',
+    'VOL': 'PRESS_VOLDN 500',
+    'RELEASE': 'RELEASE_ALL',
+}
+if parts[0] in aliases and len(parts) == 1:
+    cmd = aliases[parts[0]]
+elif parts[0] == 'POWER' and len(parts) == 2:
+    cmd = 'PRESS_POWER ' + parts[1]
+elif parts[0] in ('VOLDN', 'VOL') and len(parts) == 2:
+    cmd = 'PRESS_VOLDN ' + parts[1]
+else:
+    cmd = raw
 
 ser = serial.Serial()
 ser.port = '/dev/ttyUSB1'

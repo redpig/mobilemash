@@ -74,8 +74,8 @@ sg90_arm_drop = 4;
 // Measured screw-hole to screw-hole distance on the servo tabs.
 sg90_screw_spacing = 27;
 
-power_btn_y = 40;
-voldn_btn_y = 60;
+power_btn_y = 50;
+voldn_btn_y = 78;    // 50 + 28 mm spacing
 
 m2_hole_d = 2.2;
 
@@ -109,7 +109,7 @@ module cradle_base() {
                        -0.1])
                 cube([cam_bump_w,
                       cam_bump_y_end - cam_bump_y_start,
-                      cam_bump_protrusion + 0.1]);
+                      wall + 0.2]);
         }
     }
 }

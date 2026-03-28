@@ -192,6 +192,16 @@ static void processLine(String &line) {
             }
         }
         cmdFastboot(shutMs, comboMs);
+    } else if (cmd == "ANGLE_POWER") {
+        int a = arg.toInt();
+        if (a < 0 || a > 180) { Serial.println("ERR angle 0-180"); return; }
+        servoPower.write(a);
+        Serial.printf("OK power angle %d\n", a);
+    } else if (cmd == "ANGLE_VOLDN") {
+        int a = arg.toInt();
+        if (a < 0 || a > 180) { Serial.println("ERR angle 0-180"); return; }
+        servoVolDn.write(a);
+        Serial.printf("OK voldn angle %d\n", a);
     } else {
         Serial.printf("ERR unknown command: %s\n", cmd.c_str());
     }

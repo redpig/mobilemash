@@ -9,10 +9,10 @@
 // "Pressed"  = arm pushes the button.
 // Tune these per-build until the arm cleanly presses the button.
 #define ANGLE_POWER_RELEASED  0
-#define ANGLE_POWER_PRESSED   60
+#define ANGLE_POWER_PRESSED   75
 
 #define ANGLE_VOLDN_RELEASED  0
-#define ANGLE_VOLDN_PRESSED   60
+#define ANGLE_VOLDN_PRESSED   55
 
 // ---------- Timing defaults (ms) ----------
 #define DEFAULT_SHUTDOWN_HOLD_MS   30000   // 30 s power hold for force-off

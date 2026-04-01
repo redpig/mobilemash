@@ -15,9 +15,9 @@
 #define ANGLE_VOLDN_PRESSED   55
 
 // ---------- Timing defaults (ms) ----------
-#define DEFAULT_SHUTDOWN_HOLD_MS   30000   // 30 s power hold for force-off
+#define DEFAULT_SHUTDOWN_HOLD_MS   35000   // 35 s power hold for force-off
 #define DEFAULT_FASTBOOT_COMBO_MS   5000   // 5 s vol-down + power tap
-#define POWER_TAP_MS                 500   // brief power press in combo
+#define POWER_TAP_MS                1000   // brief power press in combo
 #define SAFETY_TIMEOUT_MS          60000   // hard cap on any single hold
 
 // ---------- Serial ----------

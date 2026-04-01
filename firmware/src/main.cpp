@@ -95,14 +95,18 @@ static void cmdFastboot(unsigned long shutdownMs, unsigned long comboMs) {
     delay(1000);
 
     // Phase 2: hold volume-down, then tap power
+    // Stagger servo movements and detach vol-down PWM before moving power
+    // to avoid brownout from simultaneous current draw.  The vol-down servo
+    // holds its position via gear friction while unpowered.
     Serial.printf("OK FASTBOOT phase2: vol-down + power tap (%lu ms window)\n",
                   comboMs);
     pressVolDn();
-    delay(200);            // small lead-in so vol-down is solidly held
+    delay(500);            // hold vol-down for 500ms before moving power
+    servoVolDn.detach();   // stop PWM — servo holds via friction
+    delay(100);
     pressPower();
 
     unsigned long tapStart = millis();
-    bool phase2Interrupted = false;
 
     // Keep power pressed for POWER_TAP_MS or until interrupted
     while (millis() - tapStart < POWER_TAP_MS) {
@@ -110,6 +114,7 @@ static void cmdFastboot(unsigned long shutdownMs, unsigned long comboMs) {
             String line = Serial.readStringUntil('\n');
             line.trim();
             if (line == "RELEASE_ALL") {
+                servoVolDn.attach(PIN_SERVO_VOLDN, 500, 2400);
                 releaseAll();
                 Serial.println("OK RELEASE_ALL (fastboot interrupted)");
                 return;
@@ -118,16 +123,15 @@ static void cmdFastboot(unsigned long shutdownMs, unsigned long comboMs) {
         delay(10);
     }
     releasePower();  // release power after tap
+    Serial.println("OK FASTBOOT power released, holding vol-down 5000 ms");
 
-    // Continue holding volume-down for the remainder of comboMs
-    unsigned long elapsed = millis() - tapStart;
-    unsigned long remaining = (comboMs > elapsed) ? comboMs - elapsed : 0;
+    // Re-attach vol-down and keep holding it for 5000ms after power release
+    servoVolDn.attach(PIN_SERVO_VOLDN, 500, 2400);
+    pressVolDn();  // re-assert vol-down now that power servo is idle
 
-    if (remaining > 0) {
-        phase2Interrupted = holdWithInterrupt(remaining);
-    }
+    bool postHoldInterrupted = holdWithInterrupt(5000);
 
-    if (!phase2Interrupted) {
+    if (!postHoldInterrupted) {
         releaseAll();
         Serial.println("OK FASTBOOT complete");
     }

@@ -45,8 +45,8 @@ clearance = 1.0;
 wall = 3.5;
 lip_h = 15;
 
-cradle_len = 90;
-cradle_y_offset = 20;
+cradle_y_offset = 7;   // start 7 mm from phone top to fully enclose camera bump
+cradle_len = 103;      // extended to maintain same coverage at bottom
 
 // ── Camera bump (Pixel 10 Pro) ──────────────────────────────────────────
 cam_bump_protrusion = 3;
@@ -109,17 +109,18 @@ module cradle_base() {
         translate([wall, -0.1, wall])
             cube([inner_w, cradle_len + 0.2, lip_h + 1]);
 
-        // Camera bump through-cut: 24.5 mm notch with a bridge at the
-        // top to retain the phone.  Phone slides in from below; the bump
-        // passes through the notch but can't pass the bridge.
-        cam_notch_len = 24.5;
-        cam_cut_start = wall;  // bridge = wall thickness at Y=0
-        translate([wall + clearance + cam_bump_inset,
-                   cam_cut_start,
-                   -0.1])
-            cube([cam_bump_w,
-                  cam_notch_len,
-                  wall + 0.2]);
+        // Camera bump through-hole — fully enclosed by base material on
+        // all four sides.  Phone drops in from above; the bump passes
+        // through the hole and the surrounding edges retain the phone
+        // on both X and Y axes.
+        if (cam_bump_y_end > cam_bump_y_start) {
+            translate([wall + clearance + cam_bump_inset,
+                       cam_bump_y_start,
+                       -0.1])
+                cube([cam_bump_w,
+                      cam_bump_y_end - cam_bump_y_start,
+                      wall + 0.2]);
+        }
     }
 }
 

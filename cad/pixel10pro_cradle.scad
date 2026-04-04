@@ -13,7 +13,7 @@
  *
  * Phone dimensions (Pixel 10 Pro):
  *   152.8 x 72 x 8.6 mm
- *   Camera bump: 3 mm protrusion, starts 10 mm from top, ~23 mm tall,
+ *   Camera bump: 3 mm protrusion, starts 10 mm from top, ~24 mm tall,
  *                2 mm inset from each side edge.
  *
  * Button layout (right side of phone, measured from top):
@@ -51,7 +51,7 @@ cradle_y_offset = 20;
 // ── Camera bump (Pixel 10 Pro) ──────────────────────────────────────────
 cam_bump_protrusion = 3;
 cam_bump_from_top   = 10;
-cam_bump_height     = 26;
+cam_bump_height     = 24;
 cam_bump_inset      = 2;
 cam_bump_y_start = max(0, cam_bump_from_top - cradle_y_offset);
 cam_bump_y_end   = cam_bump_from_top + cam_bump_height - cradle_y_offset;
@@ -159,8 +159,8 @@ module d_boss(center_y, mount_center_y) {
 module servo_mount(btn_y, mount_shift=0) {
     local_y = btn_y - cradle_y_offset + mount_shift;
 
-    // Base shelf
-    shelf_x_start = boss_x - 4;
+    // Base shelf — extends to meet the back wall
+    shelf_x_start = boss_x - 5 - 2;  // align with back wall outer edge
     shelf_w = 0 - shelf_x_start;
 
     translate([shelf_x_start,
@@ -203,8 +203,9 @@ module servo_back_wall(btn_y, mount_shift=0) {
     back_t = 2;          // thickness
     back_h = boss_height; // full height of boss
 
-    // Overlap 0.5 mm into the boss/shelf for a clean union
-    translate([boss_x - boss_d/2 - back_t + 0.5,
+    // Position inner face 5 mm from boss hole center (in X, away from wall)
+    back_x = boss_x - 5;
+    translate([back_x - back_t,
                local_y - back_w / 2,
                0])
         cube([back_t, back_w, back_h]);

@@ -79,7 +79,7 @@ voldn_btn_y = 78;
 // screw bosses have room.
 power_mount_shift = -4;
 
-m2_hole_d = 2.2;
+m2_hole_d = 1.9;     // tighter hole for better screw grip
 boss_d = 6;
 
 // ── Derived values ──────────────────────────────────────────────────────
@@ -185,6 +185,31 @@ module servo_mount_holes(btn_y, mount_shift=0) {
     }
 }
 
+// Top retention lip — prevents the phone from sliding up/out
+// under servo pressure.  A bar across the top edge of the cradle.
+module top_retention() {
+    retention_h = 5;   // how tall above the base floor
+    retention_d = wall; // thickness (same as wall)
+    // Bar sits across the top (Y=0) edge, overlapping 0.1 into the cradle
+    translate([0, -retention_d + 0.1, 0])
+        cube([outer_w, retention_d, wall + retention_h]);
+}
+
+// Back wall behind each servo to resist torque that pulls
+// the servo away from the cradle wall.
+module servo_back_wall(btn_y, mount_shift=0) {
+    local_y = btn_y - cradle_y_offset + mount_shift;
+    back_w = sg90_tab_w;
+    back_t = 2;          // thickness
+    back_h = boss_height; // full height of boss
+
+    // Overlap 0.5 mm into the boss/shelf for a clean union
+    translate([boss_x - boss_d/2 - back_t + 0.5,
+               local_y - back_w / 2,
+               0])
+        cube([back_t, back_w, back_h]);
+}
+
 module esp32_mount() {
     for (dy = [10, 58]) {
         translate([outer_w + 3, dy, 0])
@@ -208,6 +233,9 @@ module mobilemash_cradle() {
             cradle_base();
             servo_mount(power_btn_y, power_mount_shift);
             servo_mount(voldn_btn_y);
+            servo_back_wall(power_btn_y, power_mount_shift);
+            servo_back_wall(voldn_btn_y);
+            top_retention();
             esp32_mount();
         }
 

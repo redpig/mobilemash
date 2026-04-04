@@ -13,7 +13,7 @@
  *
  * Phone dimensions (Pixel 10 Pro):
  *   152.8 x 72 x 8.6 mm
- *   Camera bump: 3 mm protrusion, starts 10 mm from top, ~24 mm tall,
+ *   Camera bump: 3 mm protrusion, starts 10 mm from top, ~25 mm tall,
  *                2 mm inset from each side edge.
  *
  * Button layout (right side of phone, measured from top):
@@ -51,7 +51,7 @@ cradle_y_offset = 20;
 // ── Camera bump (Pixel 10 Pro) ──────────────────────────────────────────
 cam_bump_protrusion = 3;
 cam_bump_from_top   = 10;
-cam_bump_height     = 24;
+cam_bump_height     = 25;
 cam_bump_inset      = 2;
 cam_bump_y_start = max(0, cam_bump_from_top - cradle_y_offset);
 cam_bump_y_end   = cam_bump_from_top + cam_bump_height - cradle_y_offset;
@@ -185,23 +185,13 @@ module servo_mount_holes(btn_y, mount_shift=0) {
     }
 }
 
-// Top retention lip — prevents the phone from sliding up/out
-// under servo pressure.  A bar across the top edge of the cradle.
-module top_retention() {
-    retention_h = 5;   // how tall above the base floor
-    retention_d = wall; // thickness (same as wall)
-    // Bar sits across the top (Y=0) edge, overlapping 0.1 into the cradle
-    translate([0, -retention_d + 0.1, 0])
-        cube([outer_w, retention_d, wall + retention_h]);
-}
-
 // Back wall behind each servo to resist torque that pulls
 // the servo away from the cradle wall.
 module servo_back_wall(btn_y, mount_shift=0) {
     local_y = btn_y - cradle_y_offset + mount_shift;
     back_w = sg90_tab_w;
     back_t = 2;          // thickness
-    back_h = boss_height; // full height of boss
+    back_h = boss_height + sg90_body_h / 2; // extend up behind servo
 
     // Position inner face 5 mm from boss hole center (in X, away from wall)
     back_x = boss_x - 5;
@@ -236,7 +226,6 @@ module mobilemash_cradle() {
             servo_mount(voldn_btn_y);
             servo_back_wall(power_btn_y, power_mount_shift);
             servo_back_wall(voldn_btn_y);
-            top_retention();
             esp32_mount();
         }
 

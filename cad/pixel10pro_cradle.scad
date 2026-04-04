@@ -109,12 +109,16 @@ module cradle_base() {
         translate([wall, -0.1, wall])
             cube([inner_w, cradle_len + 0.2, lip_h + 1]);
 
+        // Camera bump through-cut — but shortened so a bridge remains
+        // at the top (Y=0 end) to retain the phone via the bump.
+        // The bridge is wall-thickness wide across the top of the notch.
         if (cam_bump_y_end > 0) {
+            cam_cut_start = cam_bump_y_start + wall;  // leave bridge at top
             translate([wall + clearance + cam_bump_inset,
-                       cam_bump_y_start,
+                       cam_cut_start,
                        -0.1])
                 cube([cam_bump_w,
-                      cam_bump_y_end - cam_bump_y_start,
+                      cam_bump_y_end - cam_cut_start,
                       wall + 0.2]);
         }
     }

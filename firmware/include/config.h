@@ -12,7 +12,7 @@
 #define ANGLE_POWER_PRESSED   75
 
 #define ANGLE_VOLDN_RELEASED  0
-#define ANGLE_VOLDN_PRESSED   65
+#define ANGLE_VOLDN_PRESSED   55
 
 // ---------- Timing defaults (ms) ----------
 #define DEFAULT_SHUTDOWN_HOLD_MS   35000   // 35 s power hold for force-off

@@ -10,8 +10,6 @@
 
 #include <Arduino.h>
 #include <ESP32Servo.h>
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
 #include "config.h"
 
 // ── Servos ──────────────────────────────────────────────────────────────
@@ -133,16 +131,14 @@ static void cmdFastboot(unsigned long shutdownMs, unsigned long comboMs) {
     // then detach vol-down and immediately tap power.
     Serial.printf("OK FASTBOOT phase2: vol-down + power tap (%lu ms window)\n",
                   comboMs);
-    // Keep vol-down attached with active PWM the entire time.
-    // Slow-ramp power to avoid brownout from simultaneous inrush.
+    // Both servos held with active PWM — dedicated power supply handles the load.
     attachAndHold(servoVolDn, PIN_SERVO_VOLDN, ANGLE_VOLDN_PRESSED);
     volDnPressed = true;
-    delay(1000);           // let vol-down settle and cap recharge
-    // Ramp power servo slowly while vol-down stays attached
-    slowMove(servoPower, PIN_SERVO_POWER, ANGLE_POWER_RELEASED, ANGLE_POWER_PRESSED);
+    delay(500);
+    attachAndHold(servoPower, PIN_SERVO_POWER, ANGLE_POWER_PRESSED);
     powerPressed = true;
 
-    // Power is now pressed (detached), vol-down still attached.
+    // Both servos now held with active PWM.
     // Wait for tap duration.
     unsigned long tapStart = millis();
     while (millis() - tapStart < POWER_TAP_MS) {
@@ -246,7 +242,6 @@ static void processLine(String &line) {
 // ── Arduino entry points ────────────────────────────────────────────────
 
 void setup() {
-    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);  // disable brownout detector
     Serial.begin(SERIAL_BAUD);
     while (!Serial) { delay(10); }
 

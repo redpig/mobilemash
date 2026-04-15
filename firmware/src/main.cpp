@@ -20,50 +20,26 @@ static bool powerPressed = false;
 static bool volDnPressed = false;
 
 // ── Helpers ─────────────────────────────────────────────────────────────
-// Attach a servo, move it, wait for it to settle, then detach to stop
-// drawing current.  SG90 servos hold position via gear friction.
-
-static const unsigned long SETTLE_MS = 300;  // time for servo to reach target
-
-static void moveAndDetach(Servo &servo, int pin, int angle) {
-    servo.attach(pin, 500, 2400);
-    servo.write(angle);
-    delay(SETTLE_MS);
-    servo.detach();
-}
-
-// Gradually ramp a servo to target angle in small steps to limit inrush current.
-static void slowMove(Servo &servo, int pin, int from, int to) {
-    servo.attach(pin, 500, 2400);
-    int step = (to > from) ? 3 : -3;
-    for (int a = from; (step > 0) ? (a < to) : (a > to); a += step) {
-        servo.write(a);
-        delay(20);
-    }
-    servo.write(to);
-    delay(SETTLE_MS);
-    servo.detach();
-}
 
 static void pressPower() {
-    moveAndDetach(servoPower, PIN_SERVO_POWER, ANGLE_POWER_PRESSED);
+    servoPower.write(ANGLE_POWER_PRESSED);
     powerPressed = true;
 }
 static void releasePower() {
-    moveAndDetach(servoPower, PIN_SERVO_POWER, ANGLE_POWER_RELEASED);
+    servoPower.write(ANGLE_POWER_RELEASED);
     powerPressed = false;
 }
 static void pressVolDn() {
-    moveAndDetach(servoVolDn, PIN_SERVO_VOLDN, ANGLE_VOLDN_PRESSED);
+    servoVolDn.write(ANGLE_VOLDN_PRESSED);
     volDnPressed = true;
 }
 static void releaseVolDn() {
-    moveAndDetach(servoVolDn, PIN_SERVO_VOLDN, ANGLE_VOLDN_RELEASED);
+    servoVolDn.write(ANGLE_VOLDN_RELEASED);
     volDnPressed = false;
 }
 static void releaseAll() {
     releasePower();
-    releaseVolDn();  // sequential — never two servos at once
+    releaseVolDn();
 }
 
 // Block while holding, but keep reading serial for an early-release command.
@@ -88,13 +64,6 @@ static bool holdWithInterrupt(unsigned long durationMs) {
 
 // ── Command handlers ────────────────────────────────────────────────────
 
-// Attach a servo and hold it at an angle with active PWM (for long holds
-// like power-off).  Caller must detach when done.
-static void attachAndHold(Servo &servo, int pin, int angle) {
-    servo.attach(pin, 500, 2400);
-    servo.write(angle);
-}
-
 static void cmdPressButton(void (*press)(), void (*release)(),
                            const char *name, unsigned long ms) {
     if (ms == 0 || ms > SAFETY_TIMEOUT_MS) {
@@ -114,33 +83,28 @@ static void cmdFastboot(unsigned long shutdownMs, unsigned long comboMs) {
     if (shutdownMs > SAFETY_TIMEOUT_MS) shutdownMs = SAFETY_TIMEOUT_MS;
     if (comboMs > SAFETY_TIMEOUT_MS)    comboMs    = SAFETY_TIMEOUT_MS;
 
-    // Phase 1: force-shutdown by holding power.
-    // Need active PWM for the long hold (physical button resistance).
+    // Phase 1: force-shutdown by holding power
     Serial.printf("OK FASTBOOT phase1: holding power %lu ms\n", shutdownMs);
-    attachAndHold(servoPower, PIN_SERVO_POWER, ANGLE_POWER_PRESSED);
-    powerPressed = true;
+    pressPower();
     bool interrupted = holdWithInterrupt(shutdownMs);
     if (interrupted) return;
-    releasePower();   // move-and-detach
+    releasePower();
     Serial.println("OK FASTBOOT phase1 done (power released)");
 
     // Brief pause to let the phone fully shut down
     delay(1000);
 
-    // Phase 2: hold volume-down with active PWM, let cap recharge,
-    // then detach vol-down and immediately tap power.
+    // Phase 2: hold volume-down, then tap power
     Serial.printf("OK FASTBOOT phase2: vol-down + power tap (%lu ms window)\n",
                   comboMs);
-    // Both servos held with active PWM — dedicated power supply handles the load.
-    attachAndHold(servoVolDn, PIN_SERVO_VOLDN, ANGLE_VOLDN_PRESSED);
-    volDnPressed = true;
-    delay(500);
-    attachAndHold(servoPower, PIN_SERVO_POWER, ANGLE_POWER_PRESSED);
-    powerPressed = true;
+    pressVolDn();
+    delay(200);            // small lead-in so vol-down is solidly held
+    pressPower();
 
-    // Both servos now held with active PWM.
-    // Wait for tap duration.
     unsigned long tapStart = millis();
+    bool phase2Interrupted = false;
+
+    // Keep power pressed for POWER_TAP_MS or until interrupted
     while (millis() - tapStart < POWER_TAP_MS) {
         if (Serial.available()) {
             String line = Serial.readStringUntil('\n');
@@ -153,13 +117,17 @@ static void cmdFastboot(unsigned long shutdownMs, unsigned long comboMs) {
         }
         delay(10);
     }
-    releasePower();
-    Serial.println("OK FASTBOOT power released, holding vol-down 5000 ms");
-    // vol-down is still attached from above — no re-engage needed
+    releasePower();  // release power after tap
 
-    bool postHoldInterrupted = holdWithInterrupt(5000);
+    // Continue holding volume-down for the remainder of comboMs
+    unsigned long elapsed = millis() - tapStart;
+    unsigned long remaining = (comboMs > elapsed) ? comboMs - elapsed : 0;
 
-    if (!postHoldInterrupted) {
+    if (remaining > 0) {
+        phase2Interrupted = holdWithInterrupt(remaining);
+    }
+
+    if (!phase2Interrupted) {
         releaseAll();
         Serial.println("OK FASTBOOT complete");
     }
@@ -227,12 +195,12 @@ static void processLine(String &line) {
     } else if (cmd == "ANGLE_POWER") {
         int a = arg.toInt();
         if (a < 0 || a > 180) { Serial.println("ERR angle 0-180"); return; }
-        moveAndDetach(servoPower, PIN_SERVO_POWER, a);
+        servoPower.write(a);
         Serial.printf("OK power angle %d\n", a);
     } else if (cmd == "ANGLE_VOLDN") {
         int a = arg.toInt();
         if (a < 0 || a > 180) { Serial.println("ERR angle 0-180"); return; }
-        moveAndDetach(servoVolDn, PIN_SERVO_VOLDN, a);
+        servoVolDn.write(a);
         Serial.printf("OK voldn angle %d\n", a);
     } else {
         Serial.printf("ERR unknown command: %s\n", cmd.c_str());
@@ -251,13 +219,10 @@ void setup() {
     servoPower.setPeriodHertz(50);
     servoVolDn.setPeriodHertz(50);
 
-    // Let power rail stabilize before touching servos
-    delay(500);
+    servoPower.attach(PIN_SERVO_POWER, 500, 2400);
+    servoVolDn.attach(PIN_SERVO_VOLDN, 500, 2400);
 
-    // Move each servo to released position one at a time, then detach
-    releasePower();
-    delay(200);
-    releaseVolDn();
+    releaseAll();
 
     Serial.println("OK MobileMash ready");
 }
